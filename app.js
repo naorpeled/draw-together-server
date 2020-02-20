@@ -2,14 +2,27 @@ const app = require('express')();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
+let clients = [];
+
 io.on('connection', function(socket){
-  console.log('a user connected');
-  socket.on('onDraw', function(data) {
-    socket.broadcast.emit('onDraw', data);
+  socket.on('onClientConnect', function(name) {
+    console.log(`A user named ${name} has connected.`);
+    clients.push(name);
+    io.emit('onClientConnect', clients);
   });
+  
+  socket.on('onClientDisconnect', function(name){
+    clients.splice(clients.indexOf(name), 1); 
+    io.emit('onClientDisconnect', clients);
+  });
+
+  socket.on('onDraw', function(data) {
+    io.emit('onDraw', data);
+  });
+
   socket.on('onCanvasClear', () => {
     console.log('clearning canvas');
-    socket.broadcast.emit('onCanvasClear');
+    io.emit('onCanvasClear');
   })
 });
 
