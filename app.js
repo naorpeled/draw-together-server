@@ -26,7 +26,7 @@ io.on('connection', function(socket){
   socket.on('onCanvasClear', () => {
     console.log('Clearning canvas...');
     currentCanvas = null;
-    io.emit('onCanvasClear');
+    socket.broadcast.emit('onCanvasClear');
   })
 });
 
