@@ -20,7 +20,7 @@ io.on('connection', function(socket){
 
   socket.on('onDraw', function(data) {
     currentCanvas = data.canvas;
-    io.emit('onDraw', data);
+    socket.broadcast.emit('onDraw', data);
   });
 
   socket.on('onCanvasClear', () => {

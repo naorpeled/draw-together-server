@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/naorpeled/dt-server.git"
+    "url": "git+https://github.com/naorpeled/draw-together-server.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/naorpeled/dt-server/issues"
+    "url": "https://github.com/naorpeled/draw-together-server/issues"
   },
-  "homepage": "https://github.com/naorpeled/dt-server#readme",
+  "homepage": "https://github.com/naorpeled/draw-together-server#readme",
   "dependencies": {
     "express": "^4.17.1",
     "http": "0.0.0",
