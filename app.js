@@ -6,17 +6,15 @@ let clients = [];
 let currentCanvas = null;
 let chatMessages = [];
 
-io.on('connection', function(socket){
-  socket.emit('initialCanvasLoad', currentCanvas);
+io.on('connection', function(socket) {
   socket.on('onClientConnect', function(name) {
+    socket.emit('initialCanvasLoad', currentCanvas);
     console.log(`A user named ${name} has connected.`);
-    clients.push(name);
+    clients.push({
+      name, 
+      id: socket.id
+    });
     io.emit('onClientConnect', clients, chatMessages);
-  });
-
-  socket.on('onClientDisconnect', function(name){
-    clients.splice(clients.indexOf(name), 1); 
-    io.emit('onClientDisconnect', clients);
   });
 
   socket.on('onDraw', function(data) {
@@ -35,6 +33,12 @@ io.on('connection', function(socket){
     socket.broadcast.emit('onChatMessage', data);
   })
 
+  socket.on('disconnect', () => {
+    clients =  clients.filter(user => {
+      return user.id != socket.id;
+    });
+    socket.broadcast.emit('onClientDisconnect', clients);
+  });
 });
 
 server.listen(8000, function(){
