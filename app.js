@@ -4,13 +4,14 @@ const io = require('socket.io')(server);
 
 let clients = [];
 let currentCanvas = null;
+let chatMessages = [];
 
 io.on('connection', function(socket){
   socket.emit('initialCanvasLoad', currentCanvas);
   socket.on('onClientConnect', function(name) {
     console.log(`A user named ${name} has connected.`);
     clients.push(name);
-    io.emit('onClientConnect', clients);
+    io.emit('onClientConnect', clients, chatMessages);
   });
 
   socket.on('onClientDisconnect', function(name){
@@ -27,7 +28,13 @@ io.on('connection', function(socket){
     console.log('Clearning canvas...');
     currentCanvas = null;
     socket.broadcast.emit('onCanvasClear');
+  });
+
+  socket.on('onChatMessage', (data) => {
+    chatMessages.push(data);
+    socket.broadcast.emit('onChatMessage', data);
   })
+
 });
 
 server.listen(8000, function(){
