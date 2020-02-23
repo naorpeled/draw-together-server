@@ -2,42 +2,67 @@ const app = require('express')();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
-let clients = [];
-let currentCanvas = null;
-let chatMessages = [];
+let rooms = new Map();
+// id, clients, canvas, messages
 
 io.on('connection', function(socket) {
+  const roomId = socket.handshake.query.roomId;
+  socket.join(roomId);
+  if(!rooms.get(roomId)) {
+    rooms.set(roomId, {
+      clients: [],
+      messages: [],
+      canvas: ''
+    });
+  }
+  let roomInfo = rooms.get(roomId);
   socket.on('onClientConnect', function(name) {
-    socket.emit('initialCanvasLoad', currentCanvas);
-    console.log(`A user named ${name} has connected.`);
-    clients.push({
+    console.log(`A user named ${name} has connected to room #${roomId}.`);
+
+    if(roomInfo.canvas) {
+      socket.emit('initialCanvasLoad', roomInfo.canvas);
+    }
+
+    let info = roomInfo;
+    info.clients.push({
       name, 
       id: socket.id
     });
-    io.emit('onClientConnect', clients, chatMessages);
+
+    io.to(roomId).emit('onClientConnect', info.clients, info.messages);
   });
 
   socket.on('onDraw', function(data) {
-    currentCanvas = data.canvas;
-    socket.broadcast.emit('onDraw', data);
+    let info = roomInfo;
+    const newCanvas = data.canvas;
+    info.canvas = newCanvas;
+
+    socket.to(roomId).emit('onDraw', data);
   });
 
   socket.on('onCanvasClear', () => {
     console.log('Clearning canvas...');
-    currentCanvas = null;
-    socket.broadcast.emit('onCanvasClear');
+    let info = roomInfo;
+    info.canvas = '';
+
+    socket.to(socket.handshake.query.roomId).emit('onCanvasClear');
   });
 
   socket.on('onChatMessage', (data) => {
-    chatMessages.push(data);
-    socket.broadcast.emit('onChatMessage', data);
+    let info = roomInfo;
+    
+    info.messages.push(data);
+    socket.to(roomId).emit('onChatMessage', data);
   })
 
   socket.on('disconnect', () => {
-    clients =  clients.filter(user => {
+    let info = roomInfo;
+    let clients = info.clients.filter(user => {
       return user.id != socket.id;
     });
-    socket.broadcast.emit('onClientDisconnect', clients);
+    info.clients = clients;
+
+    socket.to(roomId).emit('onClientDisconnect', clients);
   });
 });
 
