@@ -9,6 +9,7 @@ let rooms = new Map();
 io.on('connection', function(socket) {
   const roomId = socket.handshake.query.roomId;
   socket.join(roomId);
+  // Initialize the room
   if(!rooms.get(roomId)) {
     rooms.set(roomId, {
       clients: [],
@@ -18,63 +19,61 @@ io.on('connection', function(socket) {
   }
   let roomInfo = rooms.get(roomId);
 
+  socket.emit('initialCanvasLoad', roomInfo.canvas);
+  
   socket.on('onClientConnect', function(name) {
     console.log(`A user named ${name} has connected to room #${roomId}.`);
 
-    if(roomInfo.canvas) {
-      socket.emit('initialCanvasLoad', roomInfo.canvas);
-    }
-
-    let info = roomInfo;
-    info.clients.push({
+    // Update the list of clients
+    roomInfo.clients.push({
       name, 
       id: socket.id
     });
 
+    // We want to only transfer the connected users and previous messages
     const data = {
-      users: info.clients,
-      messages: info.messages
+      users: roomInfo.clients,
+      messages: roomInfo.messages
     }
 
-    io.to(roomId).emit('onClientConnect', data);
+    // Pass the list of clients and previous chat messages to this user
+    socket.emit('onClientConnect', data);
+    // Pass only the updated list of clients to the rest of the users
+    socket.to(roomId).emit('onClientConnect', {users: data.users});
   });
 
   socket.on('onDraw', function(data) {
-    let info = roomInfo;
+    // Update the current saved canvas
     const newCanvas = data.canvas;
-    info.canvas = newCanvas;
+    roomInfo.canvas = newCanvas;
 
     socket.to(roomId).emit('onDraw', data);
   });
 
   socket.on('onCanvasClear', () => {
     console.log('Clearning canvas...');
-    let info = roomInfo;
-    info.canvas = '';
+    roomInfo.canvas = '';
 
-    socket.to(socket.handshake.query.roomId).emit('onCanvasClear');
+    socket.to(roomId).emit('onCanvasClear');
   });
 
-  socket.on('onChatMessage', (data) => {
-    let info = roomInfo;
-    
-    info.messages.push(data);
-    socket.to(roomId).emit('onChatMessage', data);
-  })
-
   socket.on('onClientRescale', (data) => {
-    let info = roomInfo;
-    data.canvas = info.canvas;
+    data.canvas = roomInfo.canvas;
     
     socket.emit('onClientRescale', data);
   });
 
+  socket.on('onChatMessage', (data) => {
+    roomInfo.messages.push(data);
+
+    socket.to(roomId).emit('onChatMessage', data);
+  });
+
   socket.on('disconnect', () => {
-    let info = roomInfo;
-    let clients = info.clients.filter(user => {
+    let clients = roomInfo.clients.filter(user => {
       return user.id != socket.id;
     });
-    info.clients = clients;
+    roomInfo.clients = clients;
 
     socket.to(roomId).emit('onClientDisconnect', clients);
   });
