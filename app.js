@@ -30,16 +30,10 @@ io.on('connection', function(socket) {
       id: socket.id
     });
 
-    // We want to only transfer the connected users and previous messages
-    const data = {
-      users: roomInfo.clients,
-      messages: roomInfo.messages
-    }
-
-    // Pass the list of clients and previous chat messages to this user
-    socket.emit('onClientConnect', data);
-    // Pass only the updated list of clients to the rest of the users
-    socket.to(roomId).emit('onClientConnect', {users: data.users});
+    // Pass the previous chat messages to this user
+    socket.emit('onClientConnect', roomInfo.messages);
+    // Pass the new user's name to the rest of the clients
+    socket.to(roomId).emit('onClientConnect', name);
   });
 
   socket.on('onDraw', function(data) {
