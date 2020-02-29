@@ -58,10 +58,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('onClientRescale', () => {
-    const data = {
-      canvas: roomInfo.canvas
-    }
-    socket.emit('onClientRescale', data);
+    socket.emit('onClientRescale', roomInfo.canvas);
   });
 
   socket.on('onChatMessage', (data) => {
