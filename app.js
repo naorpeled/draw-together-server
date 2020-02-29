@@ -57,9 +57,10 @@ io.on('connection', function(socket) {
     socket.to(roomId).emit('onCanvasClear');
   });
 
-  socket.on('onClientRescale', (data) => {
-    data.canvas = roomInfo.canvas;
-    
+  socket.on('onClientRescale', () => {
+    const data = {
+      canvas: roomInfo.canvas
+    }
     socket.emit('onClientRescale', data);
   });
 
